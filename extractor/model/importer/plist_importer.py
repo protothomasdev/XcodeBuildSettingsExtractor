@@ -26,7 +26,7 @@ class PlistImporter(ImportInterface):
                 for option in d["Options"]:
                     
                     values = option.get("Values", [])
-                    enum_values = cls.extract_values(list=values)
+                    enum_values = cls.extract_values(values)
 
                     setting = Setting(
                         name=option.get("Name"),
@@ -56,10 +56,11 @@ class PlistImporter(ImportInterface):
         return settings
 
     @classmethod
-    def extract_values(cls, list: list) -> list:
+    def extract_values(cls, values: list) -> list:
         enum_values = []
-        for value in list:
+        for value in values:
             if type(value) is str:
                 enum_values.append(value)
             elif type(value) is dict:
                 enum_values.append(value["Value"])
+        return enum_values
