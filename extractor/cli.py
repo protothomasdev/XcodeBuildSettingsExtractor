@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 import typer
 from extractor import __app_name__, __version__
+from extractor.model.importer.importer import Importer
 
 app = typer.Typer()
 
@@ -37,11 +38,9 @@ def extract(
     if not xcode.exists():
          _showError('Xcode not found')
     else:
-        plugin_path = xcode.joinpath('Contents', 'PlugIns')
-        for spec_file in plugin_path.glob('**/*.xcspec'):
-            typer.secho(f'Path: {spec_file}')
+        spec_file_paths = list(xcode.joinpath('Contents', 'PlugIns').rglob('*.xcspec'))
+        settings = Importer.parse_paths(spec_file_paths)
         
-
 def _showError(txt: str):
     typer.secho(txt, fg=typer.colors.RED)
     raise typer.Exit(1)
