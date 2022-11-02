@@ -12,6 +12,12 @@ class Setting:
         self.default_value = default_value
         self.values = values
 
+        # if for some reason the default value is not in the list of values, add it.
+        if self.default_value != None and self.default_value not in self.values:
+            # do not add it if the default value is a variable
+            if not self.default_value.startswith('$('):
+                self.values.append(self.default_value)
+
     def __repr__(self):
         return f"<{self.name}>"
 
