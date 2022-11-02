@@ -5,6 +5,7 @@ from typing import Optional
 import typer
 from extractor import __app_name__, __version__
 from .model.importer.importer import Importer
+from .model.exporter.exporter import Exporter
 
 app = typer.Typer()
 
@@ -28,18 +29,29 @@ def main(
 
 @app.command()
 def extract(
-    xc_path: str = typer.Argument(...)
+    xc_path: Path = typer.Argument(
+        ...,
+        exists=True,
+        readable=True,
+        help="The path to the local Xcode app.", 
+    ),
+    output_json: Optional[Path] = typer.Option(
+        None,
+        "--out-json",
+        "-j",
+        help="The path to the file the build settings should be exported to.", 
+        file_okay=True,
+        dir_okay=False)
 ) -> None:
     """Extracts the build settings from a given Xcode installation."""
     xcode = Path(xc_path)
-
-    if not xcode.suffix == ".app":
-        _showError(f'Path is not an application: {xcode.suffix}')
-    if not xcode.exists():
-         _showError('Xcode not found')
-    else:
-        spec_file_paths = list(xcode.joinpath('Contents', 'PlugIns').rglob('*.xcspec'))
-        settings = Importer.parse_paths(spec_file_paths)
+    spec_file_paths = list(xcode.joinpath('Contents', 'PlugIns').rglob('*.xcspec'))
+    settings = Importer.parse_paths(spec_file_paths)
+    if output_json:
+        Exporter.export_as_json(
+            settings=settings,
+            output=output_json
+        )
         
 def _showError(txt: str):
     typer.secho(txt, fg=typer.colors.RED)
