@@ -14,3 +14,11 @@ class Setting:
 
     def __repr__(self):
         return f"<{self.name}>"
+
+    def __eq__(self, other) -> bool:
+        # settings with the same key are considered equal
+        return self.key == other.key
+
+    def __hash__(self) -> int:
+        # settings with the same key are considered equal
+        return hash(('key', self.key))

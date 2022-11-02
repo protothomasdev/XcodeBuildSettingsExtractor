@@ -4,7 +4,7 @@ import plistlib
 
 from typing import List
 
-from extractor.model.importer.xcspec_converter import convert
+from .xcspec_converter import convert
 
 from .import_interface import ImportInterface
 from ..setting import Setting

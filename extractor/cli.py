@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 import typer
 from extractor import __app_name__, __version__
-from extractor.model.importer.importer import Importer
+from .model.importer.importer import Importer
 
 app = typer.Typer()
 
