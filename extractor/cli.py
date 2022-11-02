@@ -39,7 +39,14 @@ def extract(
         None,
         "--out-json",
         "-j",
-        help="The path to the file the build settings should be exported to.", 
+        help="The path to the json file the build settings should be exported to.", 
+        file_okay=True,
+        dir_okay=False),
+    output_swift: Optional[Path] = typer.Option(
+        None,
+        "--out-swift",
+        "-s",
+        help="The path to the swift file the build settings should be exported to.", 
         file_okay=True,
         dir_okay=False)
 ) -> None:
@@ -51,6 +58,11 @@ def extract(
         Exporter.export_as_json(
             settings=settings,
             output=output_json
+        )
+    if output_swift:
+        Exporter.export_as_swift(
+            settings=settings,
+            output=output_swift
         )
         
 def _showError(txt: str):
