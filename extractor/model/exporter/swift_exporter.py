@@ -13,5 +13,12 @@ class SwiftExporter(ExportInterface):
     def export(cls, settings: List[Setting], output: Path) -> Path:
         """Exports the settings to a Swift file."""
         with output.open('w') as out:
+            out.write('import ProjectDescription\n\n')
+            out.write('public typealias Path = String\n\n')
+            out.write('public extension SettingsDictionary {\n')
+
             for s in settings:
-                out.write(to_swift_code(s))
+                out.write('\n' + to_swift_code(s))
+
+            out.write('\n\n}')
+            out.write('\n\n')
