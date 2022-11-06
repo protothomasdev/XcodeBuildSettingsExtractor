@@ -51,12 +51,16 @@ def _enum_name(name: str) -> str:
 def _enum_case_name(name: str) -> str:
     if len(name) == 0:
         return 'empty'
-    elif name == 'default':
+    elif name.lower() == 'default':
         return 'Default'
     elif name == 'extension':
         return 'Extension'
     elif name == 'XML':
         return 'XML'
+    elif name == 'Binary':
+        return 'Binary'
+    elif name == 'UIStatusBarStyleDefault':
+        return 'Default'
     elif name.startswith("UIStatusBarStyle"):
         s = name[len("UIStatusBarStyle"):]
         return ''.join([s[0].lower(), s[1:]])

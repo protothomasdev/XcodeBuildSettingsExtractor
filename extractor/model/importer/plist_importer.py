@@ -26,6 +26,10 @@ class PlistImporter(ImportInterface):
                 if not "Options" in d:
                     continue
                 for option in d["Options"]:
+                    if str(option.get("Name")).startswith('__'):
+                        # omit private settings
+                        continue
+
                     setting = Setting(
                         name=option.get("Name"),
                         key=option.get("Name"),
