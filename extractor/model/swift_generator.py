@@ -1,3 +1,4 @@
+"""This module provides methods to generate Swift code from settings."""
 from re import sub
 from typing import Optional
 from .setting import Setting
@@ -5,7 +6,8 @@ from .setting import Setting
 _TAB = '    '
 _EMPTY_LINE = '\n'
 
-def to_string(s: Setting) -> str:
+def to_swift_code(s: Setting) -> str:
+    """Generates swift code from a given setting."""
     string = ''
     if s.type == "Enumeration":
         string += _enum(s)
@@ -31,12 +33,12 @@ def _func(s: Setting) -> str:
     return string
 
 def _enum(s: Setting) -> str:
-    if s.values == None:
+    if s.enum_cases == None:
         return ''
     string = ''
     string += f'enum {_enum_name(s.key)}: String' + ' {\n'
 
-    for v in s.values:
+    for v in s.enum_cases:
         string += _TAB + f'case {_enum_case_name(v)} = \"{v}\"' + '\n'
 
     string += '}\n'

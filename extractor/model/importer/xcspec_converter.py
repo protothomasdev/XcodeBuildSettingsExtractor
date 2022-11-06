@@ -1,10 +1,11 @@
 """This module provides methods to convert xcspec files to plists"""
+
 from pathlib import Path
 import subprocess
 import tempfile, shutil, os
 
 def convert(path: Path) -> str:
-    """Convert a given .xcspec file to a .plist file."""
+    """Converts a given .xcspec file to a .plist file."""
     if not path.suffix == ".xcspec":
         raise InvalidFileType
     
@@ -23,7 +24,7 @@ def convert(path: Path) -> str:
 
 
 def _create_temporary_copy(source: Path, temp_dir, name: str) -> str:
-    """Copy a file to a temp folder."""
+    """Copies a file to a temp folder."""
     output = os.path.join(temp_dir, name)
     shutil.copy2(source, output)
     return output
