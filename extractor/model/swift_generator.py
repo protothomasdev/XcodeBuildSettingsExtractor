@@ -22,26 +22,26 @@ def _func(s: Setting) -> str:
     string = ''
     if s.description != None:
         for line in s.description.split('\n'):
-            string += _documentation(line) + '\n'
+            string += _TAB +_documentation(line) + '\n'
     
-    string += _func_name(s)
+    string += _TAB + _func_name(s)
     string += ' {\n'
-    string += _TAB + 'var newDict = self' + '\n'
-    string += _TAB + f'newDict[\"{s.key}\"] = {_save_value_statement(s)}' + '\n'
-    string += _TAB + 'return newDict' + '\n'
-    string += '}'
+    string += _TAB + _TAB + 'var newDict = self' + '\n'
+    string += _TAB + _TAB + f'newDict[\"{s.key}\"] = {_save_value_statement(s)}' + '\n'
+    string += _TAB + _TAB + 'return newDict' + '\n'
+    string += _TAB + '}'
     return string
 
 def _enum(s: Setting) -> str:
     if s.enum_cases == None:
         return ''
     string = ''
-    string += f'enum {_enum_name(s.key)}: String' + ' {\n'
+    string += _TAB + f'enum {_enum_name(s.key)}: String' + ' {\n'
 
     for v in s.enum_cases:
-        string += _TAB + f'case {_enum_case_name(v)} = \"{v}\"' + '\n'
+        string += _TAB + _TAB + f'case {_enum_case_name(v)} = \"{v}\"' + '\n'
 
-    string += '}\n'
+    string += _TAB + '}\n'
     return string
 
 def _enum_name(name: str) -> str:

@@ -20,5 +20,5 @@ class SwiftExporter(ExportInterface):
             for s in settings:
                 out.write('\n' + to_swift_code(s))
 
-            out.write('\n\n}')
-            out.write('\n\n')
+            out.write('\n}')
+            out.write('\n')
