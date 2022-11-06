@@ -84,17 +84,17 @@ def _documentation(text: str) -> str:
 def _func_name(s: Setting):
     name = 'func ' + _camel_case(s.key)
     name += '('
-    if s.type == 'String':
+    if s.type == Setting.TYPE_STRING:
         name += '_ value: String'
-    elif s.type == 'StringList':
+    elif s.type == Setting.TYPE_STRINGLIST:
         name += '_ values: [String]'
-    elif s.type == 'Path':
+    elif s.type == Setting.TYPE_PATH:
         name += '_ path: Path'
-    elif s.type == 'PathList':
+    elif s.type == Setting.TYPE_PATHLIST:
         name += '_ paths: [Path]'
-    elif s.type == 'Boolean':
+    elif s.type == Setting.TYPE_BOOLEAN:
         name += '_ bool: Bool'
-    elif s.type == 'Enumeration':
+    elif s.type == Setting.TYPE_ENUM:
         name += f'_ value: {_enum_name(s.key)}'
 
     default = _default_value(s)

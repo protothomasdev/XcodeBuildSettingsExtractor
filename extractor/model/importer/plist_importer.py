@@ -26,10 +26,6 @@ class PlistImporter(ImportInterface):
                 if not "Options" in d:
                     continue
                 for option in d["Options"]:
-                    
-                    values = option.get("Values", [])
-                    enum_cases = cls.extract_enum_cases(values)
-
                     setting = Setting(
                         name=option.get("Name"),
                         key=option.get("Name"),
@@ -37,7 +33,7 @@ class PlistImporter(ImportInterface):
                         type=option.get("Type"),
                         category=option.get("Category"),
                         default_value=option.get("DefaultValue"),
-                        enum_cases=enum_cases
+                        enum_cases=cls._extract_enum_cases(option.get("Values", []))
                     )
                     settings.append(setting)
 
@@ -59,7 +55,7 @@ class PlistImporter(ImportInterface):
         return settings
 
     @classmethod
-    def extract_enum_cases(cls, values: list) -> list:
+    def _extract_enum_cases(cls, values: list) -> list:
         """Exctracts the enum cases from a list of values."""
         enum_values = []
         for value in values:
