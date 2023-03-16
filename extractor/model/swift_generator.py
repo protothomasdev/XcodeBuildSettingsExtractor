@@ -1,47 +1,141 @@
 """This module provides methods to generate Swift code from settings."""
 from re import sub
-from typing import Optional
+from typing import Optional, List
 from .setting import Setting
 
 _TAB = '    '
 _EMPTY_LINE = '\n'
 
-def to_swift_code(s: Setting) -> str:
-    """Generates swift code from a given setting."""
+def to_swift_code(settings: List[Setting]) -> str:
+    """Generates swift code from a list of settings."""
     string = ''
-    if s.type == "Enumeration":
-        string += _enum(s)
-        string += _EMPTY_LINE
+
+    string += _fileheader()
+
+    string += _EMPTY_LINE
     
-    string += _func(s)
+    string += _newline('public extension SettingsDictionary {')
+    string += _EMPTY_LINE
+    string += _build_settings_enum(settings, 1)
+    string += _EMPTY_LINE
+    string += _newline('}')
+
     string += _EMPTY_LINE
 
-    return string
+    string += _newline('public extension SettingsDictionary {')
+    string += _EMPTY_LINE
+    string += _argument_enums(settings, 1)
+    string += _EMPTY_LINE
+    string += _newline('}')
 
-def _func(s: Setting) -> str:
-    string = ''
-    if s.description != None:
-        for line in s.description.split('\n'):
-            string += _TAB +_documentation(line) + '\n'
+    string += _EMPTY_LINE
     
-    string += _TAB + _func_name(s)
-    string += ' {\n'
-    string += _TAB + _TAB + 'var newDict = self' + '\n'
-    string += _TAB + _TAB + f'newDict[\"{s.key}\"] = {_save_value_statement(s)}' + '\n'
-    string += _TAB + _TAB + 'return newDict' + '\n'
-    string += _TAB + '}'
+    string += _newline('extension SettingsDictionary: ExpressibleByArrayLiteral {')
+    string += _EMPTY_LINE
+    string += _add_initialise_extension()
+    string += _EMPTY_LINE
+    string += _newline('}')
+
     return string
 
-def _enum(s: Setting) -> str:
+def _documentation(text: str) -> str:
+    return '/// ' + text
+
+def _fileheader() -> str:
+    string = ''
+    string += _newline('import ProjectDescription')
+    string += _EMPTY_LINE
+    string += _newline('public typealias Path = String')
+    return string
+
+def _build_settings_enum(settings: List[Setting], indent: int = 0) -> str:
+    string = ''
+    string += _newline('enum XcodeBuildSetting {', indent)
+    for s in settings:
+        if s.description != None:
+            for line in s.description.split('\n'):
+                string += _newline(_documentation(line), indent + 1)
+        
+        string += _newline(_setting_enum_name(s), indent + 1)
+    
+    string += _EMPTY_LINE
+    string += _settings_var(settings, indent + 1)
+    string += _newline('}', indent)
+    return string
+
+def _settings_var(settings: List[Setting], indent: int = 0) -> str:
+    string = ''
+    string += _newline('var info: (key: String, value: SettingValue) {', indent)
+    string += _newline('switch self {', indent + 1)
+    for s in settings:
+        string += _newline(f'case .{_camel_case(s.key)}(let value):', indent + 2)
+        string += _newline(f'return (\"{s.key}\", {_save_value_statement(s=s, valueID="value")})', indent + 3)
+    string += _newline(f'default:', indent + 2)
+    string += _newline(f'fatalError("Not a valid build setting")', indent + 3)
+
+    string += _newline('}', indent + 1)
+    string += _newline('}', indent)
+    return string
+
+def _argument_enums(settings: List[Setting], indent: int = 0) -> str:
+    enums = [_argument_enum(s, indent) for s in settings if s.type == Setting.TYPE_ENUM]
+    return _EMPTY_LINE.join(enums)
+
+def _add_initialise_extension(indent: int = 0) -> str:
+    string = ''
+    string += _newline('public init(buildSettings: [XcodeBuildSetting]) {', indent + 1)
+    string += _newline('self.init()', 2)
+    string += _newline('buildSettings.forEach { self[$0.info.key] = $0.info.value }', indent + 2)
+    string += _newline('}', indent + 1)
+    string += _EMPTY_LINE
+    string += _newline('public init(arrayLiteral elements: XcodeBuildSetting...) {', indent + 1)
+    string += _newline('self.init()', 2)
+    string += _newline('elements.forEach { self[$0.info.key] = $0.info.value }', indent + 2)
+    string += _newline('}',indent + 1)
+    string += _EMPTY_LINE
+    string += _newline('public func extend(with buildSettings: [XcodeBuildSetting]) -> ProjectDescription.SettingsDictionary {',1)
+    string += _newline('var newDict = self', indent + 2)
+    string += _newline('buildSettings.forEach { newDict[$0.info.key] = $0.info.value }', indent + 2)
+    string += _newline('return newDict', indent + 2)
+    string += _newline('}', indent + 1)
+    return string
+
+def _newline(text: str, indent: int = 0) -> str:
+    return _TAB * indent + text + '\n'
+
+def _setting_enum_name(s: Setting):
+    name = 'case ' + _camel_case(s.key)
+    name += '('
+    if s.type == Setting.TYPE_STRING:
+        name += '_ value: String'
+    elif s.type == Setting.TYPE_STRINGLIST:
+        name += '_ values: [String]'
+    elif s.type == Setting.TYPE_PATH:
+        name += '_ path: Path'
+    elif s.type == Setting.TYPE_PATHLIST:
+        name += '_ paths: [Path]'
+    elif s.type == Setting.TYPE_BOOLEAN:
+        name += '_ bool: Bool'
+    elif s.type == Setting.TYPE_ENUM:
+        name += f'_ value: {_enum_name(s.key)}'
+
+    default = _default_value(s)
+    if default != None:
+        name += f' = {default}'
+
+    name += ')'
+    return name
+
+def _argument_enum(s: Setting, indent: int = 0) -> str:
     if s.enum_cases == None:
         return ''
     string = ''
-    string += _TAB + f'enum {_enum_name(s.key)}: String' + ' {\n'
+    string += _newline(f'enum {_enum_name(s.key)}: String' + ' {', indent)
 
     for v in s.enum_cases:
-        string += _TAB + _TAB + f'case {_enum_case_name(v)} = \"{v}\"' + '\n'
+        string += _newline(f'case {_enum_case_name(v)} = \"{v}\"', indent + 1)
 
-    string += _TAB + '}\n'
+    string += _newline('}', indent)
     return string
 
 def _enum_name(name: str) -> str:
@@ -82,32 +176,6 @@ def _camel_case(text: str, start_lower: bool = True) -> str:
         else:
             return ''.join([s[0].upper(), s[1:]])
 
-def _documentation(text: str) -> str:
-    return '/// ' + text
-
-def _func_name(s: Setting):
-    name = 'func ' + _camel_case(s.key)
-    name += '('
-    if s.type == Setting.TYPE_STRING:
-        name += '_ value: String'
-    elif s.type == Setting.TYPE_STRINGLIST:
-        name += '_ values: [String]'
-    elif s.type == Setting.TYPE_PATH:
-        name += '_ path: Path'
-    elif s.type == Setting.TYPE_PATHLIST:
-        name += '_ paths: [Path]'
-    elif s.type == Setting.TYPE_BOOLEAN:
-        name += '_ bool: Bool'
-    elif s.type == Setting.TYPE_ENUM:
-        name += f'_ value: {_enum_name(s.key)}'
-
-    default = _default_value(s)
-    if default != None:
-        name += f' = {default}'
-
-    name += ') -> ProjectDescription.SettingsDictionary'
-    return name
-
 def _default_value(s: Setting) -> Optional[str]:
 
     if s.default_value == None:
@@ -136,16 +204,16 @@ def _default_value(s: Setting) -> Optional[str]:
 def _masked(text: str) -> str:
     return text.replace('"','\\"')
 
-def _save_value_statement(s: Setting) -> str:
-    if s.type == 'String':
-        return '.string(value)'
-    elif s.type == 'StringList':
-        return '.array(values)'
-    elif s.type == 'Path':
-        return '.string(path)'
-    elif s.type == 'PathList':
-        return '.array(paths)'
-    elif s.type == 'Boolean':
-        return '.init(booleanLiteral: bool)'
-    elif s.type == 'Enumeration':
-        return '.string(value.rawValue)'
+def _save_value_statement(s: Setting, valueID: str) -> str:
+    if s.type == Setting.TYPE_STRING:
+        return f'.string({valueID})'
+    elif s.type == Setting.TYPE_STRINGLIST:
+        return f'.array({valueID})'
+    elif s.type == Setting.TYPE_PATH:
+        return f'.string({valueID})'
+    elif s.type == Setting.TYPE_PATHLIST:
+        return f'.array({valueID})'
+    elif s.type == Setting.TYPE_BOOLEAN:
+        return f'.init(booleanLiteral: {valueID})'
+    elif s.type == Setting.TYPE_ENUM:
+        return f'.string({valueID}.rawValue)'
