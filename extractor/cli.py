@@ -37,14 +37,14 @@ def extract(
     ),
     output_json: Optional[Path] = typer.Option(
         None,
-        "--out-json",
+        "--json",
         "-j",
         help="The path to the json file the build settings should be exported to.", 
         file_okay=True,
         dir_okay=False),
     output_swift: Optional[Path] = typer.Option(
         None,
-        "--out-swift",
+        "--swift",
         "-s",
         help="The path to the swift file the build settings should be exported to.", 
         file_okay=True,
