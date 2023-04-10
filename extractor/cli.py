@@ -52,7 +52,7 @@ def extract(
 ) -> None:
     """Extracts the build settings from a given Xcode installation."""
     xcode = Path(xc_path)
-    spec_file_paths = list(xcode.joinpath('Contents', 'PlugIns').rglob('*.xcspec'))
+    spec_file_paths = list(xcode.rglob('*.xcspec'))
     settings = Importer.parse_paths(spec_file_paths)
     if output_json:
         Exporter.export_as_json(
