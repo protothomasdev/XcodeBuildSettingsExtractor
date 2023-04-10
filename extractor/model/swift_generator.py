@@ -2,9 +2,11 @@
 from re import sub
 from typing import Optional, List
 from .setting import Setting
+from .swift_acronyms import ACRONYMS
 
 _TAB = '    '
 _EMPTY_LINE = '\n'
+_INFOPLIST_KEY = 'INFOPLIST_KEY'
 
 def to_swift_code(settings: List[Setting]) -> str:
     """Generates swift code from a list of settings."""
@@ -68,7 +70,7 @@ def _settings_var(settings: List[Setting], indent: int = 0) -> str:
     string += _newline('var info: (key: String, value: SettingValue) {', indent)
     string += _newline('switch self {', indent + 1)
     for s in settings:
-        string += _newline(f'case .{_camel_case(s.key)}(let value):', indent + 2)
+        string += _newline(f'case .{_enum_case_for_key(s.key)}(let value):', indent + 2)
         string += _newline(f'return (\"{s.key}\", {_save_value_statement(s=s, valueID="value")})', indent + 3)
     string += _newline(f'default:', indent + 2)
     string += _newline(f'fatalError("Not a valid build setting")', indent + 3)
@@ -104,7 +106,7 @@ def _newline(text: str, indent: int = 0) -> str:
     return _TAB * indent + text + '\n'
 
 def _setting_enum_name(s: Setting):
-    name = 'case ' + _camel_case(s.key)
+    name = 'case ' + _enum_case_for_key(s.key)
     name += '('
     if s.type == Setting.TYPE_STRING:
         name += '_ value: String'
@@ -117,7 +119,7 @@ def _setting_enum_name(s: Setting):
     elif s.type == Setting.TYPE_BOOLEAN:
         name += '_ bool: Bool'
     elif s.type == Setting.TYPE_ENUM:
-        name += f'_ value: {_enum_name(s.key)}'
+        name += f'_ value: {_argument_enum_name(s.key)}'
 
     default = _default_value(s)
     if default != None:
@@ -130,19 +132,19 @@ def _argument_enum(s: Setting, indent: int = 0) -> str:
     if s.enum_cases == None:
         return ''
     string = ''
-    string += _newline(f'enum {_enum_name(s.key)}: String' + ' {', indent)
+    string += _newline(f'enum {_argument_enum_name(s.key)}: String' + ' {', indent)
 
     for v in s.enum_cases:
-        string += _newline(f'case {_enum_case_name(v)} = \"{v}\"', indent + 1)
+        string += _newline(f'case {_argument_enum_case_name(v)} = \"{v}\"', indent + 1)
 
     string += _newline('}', indent)
     return string
 
-def _enum_name(name: str) -> str:
+def _argument_enum_name(name: str) -> str:
     string = _camel_case(name, start_lower=False)
     return string + 'Value'
 
-def _enum_case_name(name: str) -> str:
+def _argument_enum_case_name(name: str) -> str:
     if len(name) == 0:
         return 'empty'
     elif name.lower() == 'default':
@@ -199,7 +201,7 @@ def _default_value(s: Setting) -> Optional[str]:
     elif s.type == 'Enumeration':
         if default_value.startswith('$('):
             return None
-        return  f'.{_enum_case_name(default_value)}'
+        return  f'.{_argument_enum_case_name(default_value)}'
 
 def _masked(text: str) -> str:
     return text.replace('"','\\"')
@@ -217,3 +219,21 @@ def _save_value_statement(s: Setting, valueID: str) -> str:
         return f'.init(booleanLiteral: {valueID})'
     elif s.type == Setting.TYPE_ENUM:
         return f'.string({valueID}.rawValue)'
+
+def _enum_case_for_key(key: str) -> str:
+    comps = list(sub(r"(_|-|\.|\+)+", " ", key).split(" "))
+    if key.startswith(_INFOPLIST_KEY):
+        nameComps = ['infoPlistKey'] + comps[2:]
+        name = ''.join(nameComps)
+        return name
+
+    corrected_comps = []
+    for c in comps:
+        replacement = ACRONYMS.get(c)
+        if replacement != None:
+            corrected_comps += replacement
+        else:
+            corrected_comps.append(c.title())
+    corrected_comps[0] = str(corrected_comps[0]).lower()
+    name = ''.join(corrected_comps)
+    return name
