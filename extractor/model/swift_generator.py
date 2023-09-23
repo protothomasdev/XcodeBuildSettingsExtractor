@@ -32,11 +32,7 @@ def to_swift_code(settings: List[Setting]) -> str:
 
     string += _EMPTY_LINE
     
-    string += _newline('extension SettingsDictionary: ExpressibleByArrayLiteral {')
-    string += _EMPTY_LINE
-    string += _add_initialise_extension()
-    string += _EMPTY_LINE
-    string += _newline('}')
+    string += _add_initialiser_extension()
 
     return string
 
@@ -83,24 +79,32 @@ def _argument_enums(settings: List[Setting], indent: int = 0) -> str:
     enums = [_argument_enum(s, indent) for s in settings if s.type == Setting.TYPE_ENUM]
     return _EMPTY_LINE.join(enums)
 
-def _add_initialise_extension(indent: int = 0) -> str:
-    string = ''
-    string += _newline('public init(buildSettings: [XcodeBuildSetting]) {', indent + 1)
-    string += _newline('self.init()', 2)
-    string += _newline('buildSettings.forEach { self[$0.info.key] = $0.info.value }', indent + 2)
-    string += _newline('}', indent + 1)
-    string += _EMPTY_LINE
-    string += _newline('public init(arrayLiteral elements: XcodeBuildSetting...) {', indent + 1)
-    string += _newline('self.init()', 2)
-    string += _newline('elements.forEach { self[$0.info.key] = $0.info.value }', indent + 2)
-    string += _newline('}',indent + 1)
-    string += _EMPTY_LINE
-    string += _newline('public func extend(with buildSettings: [XcodeBuildSetting]) -> ProjectDescription.SettingsDictionary {',1)
-    string += _newline('var newDict = self', indent + 2)
-    string += _newline('buildSettings.forEach { newDict[$0.info.key] = $0.info.value }', indent + 2)
-    string += _newline('return newDict', indent + 2)
-    string += _newline('}', indent + 1)
-    return string
+def _add_initialiser_extension(indent: int = 0) -> str:
+    return '''
+extension SettingsDictionary: ExpressibleByArrayLiteral {
+
+    public init(buildSettings: [XcodeBuildSetting]) {
+        self.init()
+        buildSettings.forEach { self[$0.info.key] = $0.info.value }
+    }
+
+    public init(arrayLiteral elements: XcodeBuildSetting...) {
+        self.init()
+        elements.forEach { self[$0.info.key] = $0.info.value }
+    }
+
+    public func extend(with buildSettings: [XcodeBuildSetting]) -> ProjectDescription.SettingsDictionary {
+        var newDict = self
+        buildSettings.forEach { newDict[$0.info.key] = $0.info.value }
+        return newDict
+    }
+
+    mutating public func extending(with buildSettings: [XcodeBuildSetting]) {
+        buildSettings.forEach { self[$0.info.key] = $0.info.value }
+    }
+
+}
+    '''
 
 def _newline(text: str, indent: int = 0) -> str:
     return _TAB * indent + text + '\n'
