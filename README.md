@@ -10,7 +10,7 @@ This CLI requires Python 3.10.
 ## Setup
 
 First you should set up a virtual environment with `python3 -m venv ./venv` and activate it with `source venv/bin/activate`.
-Then install all required dependencies `python -m pip3 install -r requirements.txt`.
+Then install all required dependencies `pip3 install -r requirements.txt`.
 
 ## Usage
 
