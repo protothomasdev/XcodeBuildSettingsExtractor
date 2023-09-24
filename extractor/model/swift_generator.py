@@ -8,7 +8,7 @@ _TAB = '    '
 _EMPTY_LINE = '\n'
 _INFOPLIST_KEY = 'INFOPLIST_KEY'
 
-def to_swift_code(settings: List[Setting]) -> str:
+def to_swift_code(settings: List[Setting], xcversion: str) -> str:
     """Generates swift code from a list of settings."""
     string = ''
 
@@ -16,6 +16,7 @@ def to_swift_code(settings: List[Setting]) -> str:
 
     string += _EMPTY_LINE
     
+    string += _newline(f'// Generated for Xcode version {xcversion}')
     string += _newline('public extension SettingsDictionary {')
     string += _EMPTY_LINE
     string += _build_settings_enum(settings, 1)

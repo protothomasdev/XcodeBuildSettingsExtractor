@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 import typer
 from extractor import __app_name__, __version__
+from extractor.model.xcode_version_extractor import XcodeVersionExtractor
 from .model.importer.importer import Importer
 from .model.exporter.exporter import Exporter
 
@@ -52,15 +53,18 @@ def extract(
 ) -> None:
     """Extracts the build settings from a given Xcode installation."""
     xcode = Path(xc_path)
+    xcversion = XcodeVersionExtractor.extract_version(xc_path / "Contents/version.plist")
     spec_file_paths = list(xcode.rglob('*.xcspec'))
     settings = Importer.parse_paths(spec_file_paths)
     if output_json:
         Exporter.export_as_json(
+            xcversion=xcversion,
             settings=settings,
             output=output_json
         )
     if output_swift:
         Exporter.export_as_swift(
+            xcversion=xcversion,
             settings=settings,
             output=output_swift
         )

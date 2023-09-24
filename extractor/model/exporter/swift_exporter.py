@@ -10,7 +10,7 @@ class SwiftExporter(ExportInterface):
     """An implementation of the ExportInterface to export settings to a swift file."""
 
     @classmethod
-    def export(cls, settings: List[Setting], output: Path) -> Path:
+    def export(cls, xcversion: str, settings: List[Setting], output: Path) -> Path:
         """Exports the settings to a Swift file."""
         with output.open('w') as out:
-            out.write(to_swift_code(settings))
+            out.write(to_swift_code(settings=settings, xcversion=xcversion))
