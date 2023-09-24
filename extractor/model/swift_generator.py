@@ -3,6 +3,7 @@ from re import sub
 from typing import Optional, List
 from .setting import Setting
 from .swift_acronyms import ACRONYMS
+from .swift_key_replacements import KEY_REPLACEMENTS
 
 _TAB = '    '
 _EMPTY_LINE = '\n'
@@ -69,8 +70,8 @@ def _settings_var(settings: List[Setting], indent: int = 0) -> str:
     for s in settings:
         string += _newline(f'case .{_enum_case_for_key(s.key)}(let value):', indent + 2)
         string += _newline(f'return (\"{s.key}\", {_save_value_statement(s=s, valueID="value")})', indent + 3)
-    string += _newline(f'default:', indent + 2)
-    string += _newline(f'fatalError("Not a valid build setting")', indent + 3)
+    string += _newline('default:', indent + 2)
+    string += _newline('fatalError("Not a valid build setting")', indent + 3)
 
     string += _newline('}', indent + 1)
     string += _newline('}', indent)
@@ -113,17 +114,18 @@ def _newline(text: str, indent: int = 0) -> str:
 def _setting_enum_name(s: Setting):
     name = 'case ' + _enum_case_for_key(s.key)
     name += '('
-    if s.type == Setting.TYPE_STRING:
+    s_type = s.type.lower()
+    if s_type == Setting.TYPE_STRING.lower():
         name += '_ value: String'
-    elif s.type == Setting.TYPE_STRINGLIST:
+    elif s_type == Setting.TYPE_STRINGLIST.lower():
         name += '_ values: [String]'
-    elif s.type == Setting.TYPE_PATH:
+    elif s_type == Setting.TYPE_PATH.lower():
         name += '_ path: Path'
-    elif s.type == Setting.TYPE_PATHLIST:
+    elif s_type == Setting.TYPE_PATHLIST.lower():
         name += '_ paths: [Path]'
-    elif s.type == Setting.TYPE_BOOLEAN:
+    elif s_type == Setting.TYPE_BOOLEAN.lower():
         name += '_ bool: Bool'
-    elif s.type == Setting.TYPE_ENUM:
+    elif s_type == Setting.TYPE_ENUM.lower():
         name += f'_ value: {_argument_enum_name(s.key)}'
 
     default = _default_value(s)
@@ -212,17 +214,18 @@ def _masked(text: str) -> str:
     return text.replace('"','\\"')
 
 def _save_value_statement(s: Setting, valueID: str) -> str:
-    if s.type == Setting.TYPE_STRING:
+    s_type = s.type.lower()
+    if s_type == Setting.TYPE_STRING.lower():
         return f'.string({valueID})'
-    elif s.type == Setting.TYPE_STRINGLIST:
+    elif s_type == Setting.TYPE_STRINGLIST.lower():
         return f'.array({valueID})'
-    elif s.type == Setting.TYPE_PATH:
+    elif s_type == Setting.TYPE_PATH.lower():
         return f'.string({valueID})'
-    elif s.type == Setting.TYPE_PATHLIST:
+    elif s_type == Setting.TYPE_PATHLIST.lower():
         return f'.array({valueID})'
-    elif s.type == Setting.TYPE_BOOLEAN:
+    elif s_type == Setting.TYPE_BOOLEAN.lower():
         return f'.init(booleanLiteral: {valueID})'
-    elif s.type == Setting.TYPE_ENUM:
+    elif s_type == Setting.TYPE_ENUM.lower():
         return f'.string({valueID}.rawValue)'
 
 def _enum_case_for_key(key: str) -> str:
@@ -234,11 +237,15 @@ def _enum_case_for_key(key: str) -> str:
 
     corrected_comps = []
     for c in comps:
-        replacement = ACRONYMS.get(c)
-        if replacement != None:
-            corrected_comps += replacement
+        if ACRONYMS.get(c) is not None:
+            corrected_comps += ACRONYMS.get(c)
+        elif c in KEY_REPLACEMENTS:
+            return _decapitalize(c)
         else:
             corrected_comps.append(c.title())
     corrected_comps[0] = str(corrected_comps[0]).lower()
     name = ''.join(corrected_comps)
     return name
+
+def _decapitalize(s):
+    return ''.join([s[:1].lower(), s[1:]]) 
