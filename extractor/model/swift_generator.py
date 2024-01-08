@@ -4,6 +4,7 @@ from typing import Optional, List
 from .setting import Setting
 from .swift_acronyms import ACRONYMS
 from .swift_key_replacements import KEY_REPLACEMENTS
+from .setting_blacklist import SETTING_BLACKLIST
 
 _TAB = '    '
 _EMPTY_LINE = '\n'
@@ -52,6 +53,8 @@ def _build_settings_enum(settings: List[Setting], indent: int = 0) -> str:
     string = ''
     string += _newline('enum XcodeBuildSetting {', indent)
     for s in settings:
+        if s.key in SETTING_BLACKLIST:
+            continue
         if s.description != None:
             for line in s.description.split('\n'):
                 string += _newline(_documentation(line), indent + 1)
@@ -68,6 +71,8 @@ def _settings_var(settings: List[Setting], indent: int = 0) -> str:
     string += _newline('var info: (key: String, value: SettingValue) {', indent)
     string += _newline('switch self {', indent + 1)
     for s in settings:
+        if s.key in SETTING_BLACKLIST:
+            continue
         string += _newline(f'case .{_enum_case_for_key(s.key)}(let value):', indent + 2)
         string += _newline(f'return (\"{s.key}\", {_save_value_statement(s=s, valueID="value")})', indent + 3)
     string += _newline('default:', indent + 2)
@@ -169,6 +174,12 @@ def _argument_enum_case_name(name: str) -> str:
         return ''.join([s[0].lower(), s[1:]])
     elif name[0].isdigit():
         return f'_{name}'
+    elif 'c++' in name:
+        n = sub(r"c\+\+", "c_Plus_Plus", name)
+        return _camel_case(n)
+    elif 'gnu++' in name:
+        n = sub(r"gnu\+\+", "gnu_Plus_Plus", name)
+        return _camel_case(n)
     return _camel_case(name)
 
 def _camel_case(text: str, start_lower: bool = True) -> str:
